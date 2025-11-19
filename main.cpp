@@ -1,4 +1,5 @@
 #include "editor/TextDocument.h"
+#include "render/MarkdownRenderBridge.h"
 
 #include <QCoreApplication>
 #include <QGuiApplication>
@@ -14,6 +15,7 @@ int main(int argc, char* argv[])
     app.setApplicationName("TextEditor");
 
     qmlRegisterType<TextDocument>("TextEditor.Backend", 1, 0, "TextDocument");
+    qmlRegisterType<MarkdownRenderBridge>("TextEditor.Backend", 1, 0, "MarkdownRenderBridge");
 
     QQmlApplicationEngine engine;
     QObject::connect(

@@ -14,6 +14,12 @@ ApplicationWindow {
     property int wordCount: 0
     property int paragraphCount: 0
     property int lineCount: 0
+    readonly property int viewerTextOnly: 0
+    readonly property int viewerMarkdownOnly: 1
+    readonly property int viewerSplit: 2
+    property int viewerMode: viewerTextOnly
+    property int markdownPanelMode: 0
+    property string renderedMarkdown: markdownBridge.render(document.text)
 
     function openFile() {
         openDialog.open()
@@ -74,6 +80,11 @@ ApplicationWindow {
         id: document
         onStatusMessage: console.info(description)
         onErrorOccurred: console.warn(description)
+        onTextChanged: window.recomputeStats(text)
+    }
+
+    MarkdownRenderBridge {
+        id: markdownBridge
     }
 
     header: ToolBar {
@@ -117,32 +128,230 @@ ApplicationWindow {
         }
     }
 
-    ScrollView {
+    StackLayout {
         anchors.fill: parent
-        clip: true
+        currentIndex: viewerMode
 
-        TextArea {
-            id: editor
-            anchors.fill: parent
-            padding: 0
-            leftPadding: 0
-            rightPadding: 0
-            topPadding: 0
-            bottomPadding: 0
-            text: document.text
-            wrapMode: TextEdit.Wrap
-            color: "white"
-            placeholderText: qsTr("Start typing...")
-            font.family: "Menlo"
-            font.pixelSize: 16
-            selectByMouse: true
-            persistentSelection: true
-            background: null
-            onTextChanged: {
-                if (document.text !== text) {
-                    document.text = text
+        Item {
+            ScrollView {
+                id: editorView
+                anchors.fill: parent
+                clip: true
+                TextArea {
+                    id: editor
+                    width: editorView.availableWidth
+                    height: editorView.availableHeight
+                    padding: 0
+                    leftPadding: 0
+                    rightPadding: 0
+                    topPadding: 0
+                    bottomPadding: 0
+                    text: document.text
+                    wrapMode: TextEdit.Wrap
+                    color: "white"
+                    placeholderText: qsTr("Start typing...")
+                    font.family: "Menlo"
+                    font.pixelSize: 16
+                    selectByMouse: true
+                    persistentSelection: true
+                    background: null
+                    onTextChanged: {
+                        if (document.text !== text) {
+                            document.text = text
+                        }
+                        window.recomputeStats(text)
+                    }
                 }
-                window.recomputeStats(text)
+            }
+        }
+
+        Item {
+            ColumnLayout {
+                anchors.fill: parent
+                spacing: 4
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignLeft
+                    spacing: 4
+
+                    ButtonGroup {
+                        id: markdownViewGroup
+                    }
+
+                    ToolButton {
+                        text: qsTr("Edit")
+                        checkable: true
+                        checked: window.markdownPanelMode === 0
+                        onClicked: window.markdownPanelMode = 0
+                        ButtonGroup.group: markdownViewGroup
+                    }
+
+                    ToolButton {
+                        text: qsTr("Preview")
+                        checkable: true
+                        checked: window.markdownPanelMode === 1
+                        onClicked: window.markdownPanelMode = 1
+                        ButtonGroup.group: markdownViewGroup
+                    }
+                }
+
+                StackLayout {
+                    id: markdownPanel
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    currentIndex: window.markdownPanelMode
+
+                    ScrollView {
+                        anchors.fill: parent
+                        clip: true
+
+                        TextArea {
+                            width: parent ? parent.width : undefined
+                            height: parent ? parent.height : undefined
+                            padding: 0
+                            leftPadding: 0
+                            rightPadding: 0
+                            topPadding: 0
+                            bottomPadding: 0
+                            text: document.text
+                            wrapMode: TextEdit.Wrap
+                            color: "white"
+                            placeholderText: qsTr("Edit markdown...")
+                            font.family: "Menlo"
+                            font.pixelSize: 16
+                            selectByMouse: true
+                            persistentSelection: true
+                            background: null
+                            onTextChanged: {
+                                if (document.text !== text) {
+                                    document.text = text
+                                }
+                                window.recomputeStats(text)
+                            }
+                        }
+                    }
+
+                    ScrollView {
+                        anchors.fill: parent
+                        clip: true
+
+                        TextArea {
+                            readOnly: true
+                            width: parent ? parent.width : undefined
+                            height: parent ? parent.height : undefined
+                            wrapMode: TextEdit.Wrap
+                            textFormat: TextEdit.RichText
+                            text: window.renderedMarkdown
+                            color: "#f1f1f1"
+                            selectionColor: "#444444"
+                            cursorVisible: false
+                            background: Rectangle {
+                                color: "#1f1f1f"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Item {
+            RowLayout {
+                anchors.fill: parent
+                spacing: 1
+
+                ScrollView {
+                    id: splitEditorView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+
+                    TextArea {
+                        width: splitEditorView.availableWidth
+                        height: splitEditorView.availableHeight
+                        padding: 0
+                        leftPadding: 0
+                        rightPadding: 0
+                        topPadding: 0
+                        bottomPadding: 0
+                        text: document.text
+                        wrapMode: TextEdit.Wrap
+                        color: "white"
+                        placeholderText: qsTr("Start typing...")
+                        font.family: "Menlo"
+                        font.pixelSize: 16
+                        selectByMouse: true
+                        persistentSelection: true
+                        background: null
+                        onTextChanged: {
+                            if (document.text !== text) {
+                                document.text = text
+                            }
+                            window.recomputeStats(text)
+                        }
+                    }
+                }
+
+                ScrollView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+
+                    TextArea {
+                        readOnly: true
+                        width: parent ? parent.width : undefined
+                        height: parent ? parent.height : undefined
+                        wrapMode: TextEdit.Wrap
+                        textFormat: TextEdit.RichText
+                        text: window.renderedMarkdown
+                        color: "#f1f1f1"
+                        selectionColor: "#444444"
+                        cursorVisible: false
+                        background: Rectangle {
+                            color: "#1f1f1f"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    footer: ToolBar {
+        id: viewerToolbar
+        height: 34
+        RowLayout {
+            anchors.fill: parent
+            spacing: 6
+
+            ButtonGroup {
+                id: viewGroup
+            }
+
+            ToolButton {
+                text: qsTr("Text")
+                checkable: true
+                checked: window.viewerMode === window.viewerTextOnly
+                onClicked: window.viewerMode = window.viewerTextOnly
+                ButtonGroup.group: viewGroup
+            }
+
+            ToolButton {
+                text: qsTr("Markdown")
+                checkable: true
+                checked: window.viewerMode === window.viewerMarkdownOnly
+                onClicked: window.viewerMode = window.viewerMarkdownOnly
+                ButtonGroup.group: viewGroup
+            }
+
+            ToolButton {
+                text: qsTr("Split")
+                checkable: true
+                checked: window.viewerMode === window.viewerSplit
+                onClicked: window.viewerMode = window.viewerSplit
+                ButtonGroup.group: viewGroup
+            }
+
+            Item {
+                Layout.fillWidth: true
             }
         }
     }

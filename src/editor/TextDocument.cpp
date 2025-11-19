@@ -51,16 +51,11 @@ QString TextDocument::filePath() const
 
 void TextDocument::clear()
 {
-    const bool hadText = !m_text.isEmpty();
     const bool hadPath = !m_filePath.isEmpty();
 
-    m_text.clear();
+    setText(QString());
     m_filePath.clear();
 
-    if (hadText)
-    {
-        emit textChanged();
-    }
     if (hadPath)
     {
         emit filePathChanged();
