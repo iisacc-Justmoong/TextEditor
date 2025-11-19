@@ -41,6 +41,9 @@ qt_add_qml_module(TextEditor
     VERSION 1.0
     QML_FILES
         qml/Main.qml
+        qml/AppToolbar.qml
+        qml/ViewerStack.qml
+        qml/ViewerFooter.qml
 )
 
 set_target_properties(TextEditor PROPERTIES

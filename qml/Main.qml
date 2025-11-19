@@ -18,8 +18,8 @@ ApplicationWindow {
     readonly property int viewerMarkdownOnly: 1
     readonly property int viewerSplit: 2
     property int viewerMode: viewerTextOnly
-    property int markdownPanelMode: 0
-    property string renderedMarkdown: markdownBridge.render(document.text)
+    property string renderedMarkdown: ""
+    Component.onCompleted: renderedMarkdown = markdownBridge.render(document.text)
 
     function openFile() {
         openDialog.open()
@@ -54,7 +54,10 @@ ApplicationWindow {
             stamp = Qt.formatDateTime(now, "yyyy-MM-dd HH:mm:ss")
             break
         }
-        document.insertText(editor.cursorPosition, stamp + "\n")
+        const payload = stamp + "\n"
+        if (!viewerStack.insertAtCursor(payload)) {
+            document.insertText(document.text.length, payload)
+        }
     }
 
     function offsetString(minutesFromUtc) {
@@ -80,279 +83,39 @@ ApplicationWindow {
         id: document
         onStatusMessage: console.info(description)
         onErrorOccurred: console.warn(description)
-        onTextChanged: window.recomputeStats(text)
+        onTextChanged: {
+            window.recomputeStats(text)
+            window.renderedMarkdown = markdownBridge.render(text)
+        }
     }
 
     MarkdownRenderBridge {
         id: markdownBridge
     }
 
-    header: ToolBar {
-        RowLayout {
-            anchors.fill: parent
-            spacing: 8
-
-            ToolButton {
-                text: qsTr("New")
-                onClicked: document.clear()
-            }
-
-            ToolButton {
-                text: qsTr("Open")
-                onClicked: window.openFile()
-            }
-
-            ToolButton {
-                text: qsTr("Save")
-                onClicked: window.saveFile()
-            }
-
-            ToolButton {
-                id: timestampButton
-                text: qsTr("Insert Timestamp")
-                onClicked: timestampMenu.popup(timestampButton)
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            Label {
-                text: qsTr("%1 chars | %2 words | %3 paras | %4 lines")
-                      .arg(document.text.length)
-                      .arg(window.wordCount)
-                      .arg(window.paragraphCount)
-                      .arg(window.lineCount)
-                font.bold: true
-            }
-        }
+    header: AppToolbar {
+        characterCount: document.text.length
+        wordCount: window.wordCount
+        paragraphCount: window.paragraphCount
+        lineCount: window.lineCount
+        onNewRequested: document.clear()
+        onOpenRequested: window.openFile()
+        onSaveRequested: window.saveFile()
+        onInsertTimestampRequested: timestampMenu.popup()
     }
 
-    StackLayout {
+    ViewerStack {
+        id: viewerStack
         anchors.fill: parent
-        currentIndex: viewerMode
-
-        Item {
-            ScrollView {
-                id: editorView
-                anchors.fill: parent
-                clip: true
-                TextArea {
-                    id: editor
-                    width: editorView.availableWidth
-                    height: editorView.availableHeight
-                    padding: 0
-                    leftPadding: 0
-                    rightPadding: 0
-                    topPadding: 0
-                    bottomPadding: 0
-                    text: document.text
-                    wrapMode: TextEdit.Wrap
-                    color: "white"
-                    placeholderText: qsTr("Start typing...")
-                    font.family: "Menlo"
-                    font.pixelSize: 16
-                    selectByMouse: true
-                    persistentSelection: true
-                    background: null
-                    onTextChanged: {
-                        if (document.text !== text) {
-                            document.text = text
-                        }
-                        window.recomputeStats(text)
-                    }
-                }
-            }
-        }
-
-        Item {
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 4
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignLeft
-                    spacing: 4
-
-                    ButtonGroup {
-                        id: markdownViewGroup
-                    }
-
-                    ToolButton {
-                        text: qsTr("Edit")
-                        checkable: true
-                        checked: window.markdownPanelMode === 0
-                        onClicked: window.markdownPanelMode = 0
-                        ButtonGroup.group: markdownViewGroup
-                    }
-
-                    ToolButton {
-                        text: qsTr("Preview")
-                        checkable: true
-                        checked: window.markdownPanelMode === 1
-                        onClicked: window.markdownPanelMode = 1
-                        ButtonGroup.group: markdownViewGroup
-                    }
-                }
-
-                StackLayout {
-                    id: markdownPanel
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    currentIndex: window.markdownPanelMode
-
-                    ScrollView {
-                        anchors.fill: parent
-                        clip: true
-
-                        TextArea {
-                            width: parent ? parent.width : undefined
-                            height: parent ? parent.height : undefined
-                            padding: 0
-                            leftPadding: 0
-                            rightPadding: 0
-                            topPadding: 0
-                            bottomPadding: 0
-                            text: document.text
-                            wrapMode: TextEdit.Wrap
-                            color: "white"
-                            placeholderText: qsTr("Edit markdown...")
-                            font.family: "Menlo"
-                            font.pixelSize: 16
-                            selectByMouse: true
-                            persistentSelection: true
-                            background: null
-                            onTextChanged: {
-                                if (document.text !== text) {
-                                    document.text = text
-                                }
-                                window.recomputeStats(text)
-                            }
-                        }
-                    }
-
-                    ScrollView {
-                        anchors.fill: parent
-                        clip: true
-
-                        TextArea {
-                            readOnly: true
-                            width: parent ? parent.width : undefined
-                            height: parent ? parent.height : undefined
-                            wrapMode: TextEdit.Wrap
-                            textFormat: TextEdit.RichText
-                            text: window.renderedMarkdown
-                            color: "#f1f1f1"
-                            selectionColor: "#444444"
-                            cursorVisible: false
-                            background: Rectangle {
-                                color: "#1f1f1f"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Item {
-            RowLayout {
-                anchors.fill: parent
-                spacing: 1
-
-                ScrollView {
-                    id: splitEditorView
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    clip: true
-
-                    TextArea {
-                        width: splitEditorView.availableWidth
-                        height: splitEditorView.availableHeight
-                        padding: 0
-                        leftPadding: 0
-                        rightPadding: 0
-                        topPadding: 0
-                        bottomPadding: 0
-                        text: document.text
-                        wrapMode: TextEdit.Wrap
-                        color: "white"
-                        placeholderText: qsTr("Start typing...")
-                        font.family: "Menlo"
-                        font.pixelSize: 16
-                        selectByMouse: true
-                        persistentSelection: true
-                        background: null
-                        onTextChanged: {
-                            if (document.text !== text) {
-                                document.text = text
-                            }
-                            window.recomputeStats(text)
-                        }
-                    }
-                }
-
-                ScrollView {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    clip: true
-
-                    TextArea {
-                        readOnly: true
-                        width: parent ? parent.width : undefined
-                        height: parent ? parent.height : undefined
-                        wrapMode: TextEdit.Wrap
-                        textFormat: TextEdit.RichText
-                        text: window.renderedMarkdown
-                        color: "#f1f1f1"
-                        selectionColor: "#444444"
-                        cursorVisible: false
-                        background: Rectangle {
-                            color: "#1f1f1f"
-                        }
-                    }
-                }
-            }
-        }
+        document: document
+        viewerMode: window.viewerMode
+        renderedMarkdown: window.renderedMarkdown
     }
 
-    footer: ToolBar {
-        id: viewerToolbar
-        height: 34
-        RowLayout {
-            anchors.fill: parent
-            spacing: 6
-
-            ButtonGroup {
-                id: viewGroup
-            }
-
-            ToolButton {
-                text: qsTr("Text")
-                checkable: true
-                checked: window.viewerMode === window.viewerTextOnly
-                onClicked: window.viewerMode = window.viewerTextOnly
-                ButtonGroup.group: viewGroup
-            }
-
-            ToolButton {
-                text: qsTr("Markdown")
-                checkable: true
-                checked: window.viewerMode === window.viewerMarkdownOnly
-                onClicked: window.viewerMode = window.viewerMarkdownOnly
-                ButtonGroup.group: viewGroup
-            }
-
-            ToolButton {
-                text: qsTr("Split")
-                checkable: true
-                checked: window.viewerMode === window.viewerSplit
-                onClicked: window.viewerMode = window.viewerSplit
-                ButtonGroup.group: viewGroup
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
+    footer: ViewerFooter {
+        viewerMode: window.viewerMode
+        onModeSelected: function(mode) {
+            window.viewerMode = mode
         }
     }
 
