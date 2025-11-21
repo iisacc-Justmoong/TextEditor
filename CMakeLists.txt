@@ -23,6 +23,8 @@ qt_add_executable(TextEditor
     src/render/MarkdownRenderEngine.h
     src/render/MarkdownRenderBridge.cpp
     src/render/MarkdownRenderBridge.h
+    src/utils/DocumentUtilities.cpp
+    src/utils/DocumentUtilities.h
 )
 
 target_include_directories(TextEditor

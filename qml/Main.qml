@@ -11,15 +11,18 @@ ApplicationWindow {
     visible: true
     title: (document.filePath === "" ? qsTr("Untitled") : document.filePath.split("/").pop()) + qsTr(" - TextEditor")
 
-    property int wordCount: 0
-    property int paragraphCount: 0
-    property int lineCount: 0
+    readonly property int wordCount: documentUtilities.wordCount
+    readonly property int paragraphCount: documentUtilities.paragraphCount
+    readonly property int lineCount: documentUtilities.lineCount
     readonly property int viewerTextOnly: 0
     readonly property int viewerMarkdownOnly: 1
     readonly property int viewerSplit: 2
     property int viewerMode: viewerTextOnly
     property string renderedMarkdown: ""
-    Component.onCompleted: renderedMarkdown = markdownBridge.render(document.text)
+    Component.onCompleted: {
+        documentUtilities.analyzeText(document.text)
+        renderedMarkdown = markdownBridge.render(document.text)
+    }
 
     function openFile() {
         openDialog.open()
@@ -32,51 +35,10 @@ ApplicationWindow {
     }
 
     function insertTimestamp(option) {
-        const now = new Date()
-        let stamp = ""
-        switch (option) {
-        case "localShort":
-            stamp = Qt.formatDateTime(now, "yyyy-MM-dd HH:mm:ss t")
-            break
-        case "localLong":
-            stamp = Qt.formatDateTime(now, "dddd, dd MMM yyyy HH:mm:ss t")
-            break
-        case "localIso":
-            stamp = Qt.formatDateTime(now, "yyyy-MM-dd'T'HH:mm:ss.zzz")
-            break
-        case "utcIso":
-            stamp = now.toISOString()
-            break
-        case "gmtOffset":
-            stamp = Qt.formatDateTime(now, "yyyy-MM-dd HH:mm:ss 'GMT'") + offsetString(-now.getTimezoneOffset())
-            break
-        default:
-            stamp = Qt.formatDateTime(now, "yyyy-MM-dd HH:mm:ss")
-            break
-        }
-        const payload = stamp + "\n"
+        const payload = documentUtilities.makeTimestamp(option)
         if (!viewerStack.insertAtCursor(payload)) {
             document.insertText(document.text.length, payload)
         }
-    }
-
-    function offsetString(minutesFromUtc) {
-        const sign = minutesFromUtc >= 0 ? "+" : "-"
-        const total = Math.abs(minutesFromUtc)
-        const hours = Math.floor(total / 60)
-        const minutes = total % 60
-        return sign + padNumber(hours) + ":" + padNumber(minutes)
-    }
-
-    function padNumber(value) {
-        return value < 10 ? "0" + value : value
-    }
-
-    function recomputeStats(text) {
-        const trimmed = text.trim()
-        wordCount = trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length
-        paragraphCount = trimmed.length === 0 ? 0 : trimmed.split(/\n\s*\n/).length
-        lineCount = text.length === 0 ? 0 : text.split(/\n/).length
     }
 
     TextDocument {
@@ -84,13 +46,17 @@ ApplicationWindow {
         onStatusMessage: console.info(description)
         onErrorOccurred: console.warn(description)
         onTextChanged: {
-            window.recomputeStats(text)
+            documentUtilities.analyzeText(text)
             window.renderedMarkdown = markdownBridge.render(text)
         }
     }
 
     MarkdownRenderBridge {
         id: markdownBridge
+    }
+
+    DocumentUtilities {
+        id: documentUtilities
     }
 
     header: AppToolbar {
