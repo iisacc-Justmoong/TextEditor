@@ -9,6 +9,8 @@ Item {
     required property TextDocument document
     property int viewerMode: 0
     property string renderedMarkdown: ""
+    property string fontFamily: "Menlo"
+    property int fontPixelSize: 16
     onRenderedMarkdownChanged: updateMarkdownCaret()
     onViewerModeChanged: updateMarkdownCaret()
     function updateDocument(text) {
@@ -71,8 +73,8 @@ Item {
                     wrapMode: TextEdit.Wrap
                     color: "white"
                     placeholderText: qsTr("Start typing...")
-                    font.family: "Menlo"
-                    font.pixelSize: 16
+                    font.family: root.fontFamily
+                    font.pixelSize: root.fontPixelSize
                     selectByMouse: true
                     persistentSelection: true
                     background: null
@@ -123,6 +125,8 @@ Item {
                         anchors.fill: parent
                         textFormat: TextEdit.RichText
                         wrapMode: TextEdit.Wrap
+                        font.family: root.fontFamily
+                        font.pixelSize: root.fontPixelSize
                         text: root.renderedMarkdown
                         readOnly: true
                         enabled: false
@@ -141,7 +145,7 @@ Item {
                         id: markdownCaret
                         width: 2
                         height: markdownEditor.cursorRectangle.height
-                        color: "#4FC3F7"
+                        color: "#ffffff"
                         z: 1
                         opacity: 0.9
                         visible: root.viewerMode === 1 && markdownEditor.cursorVisible
@@ -157,8 +161,8 @@ Item {
                         selectionColor: Qt.rgba(79 / 255, 195 / 255, 247 / 255, 0.35)
                         wrapMode: TextEdit.Wrap
                         cursorVisible: false
-                        font.family: "Menlo"
-                        font.pixelSize: 16
+                        font.family: root.fontFamily
+                        font.pixelSize: root.fontPixelSize
                         selectByMouse: true
                         persistentSelection: true
                         focus: root.viewerMode === 1
@@ -215,8 +219,8 @@ Item {
                         wrapMode: TextEdit.Wrap
                         color: "white"
                         placeholderText: qsTr("Start typing...")
-                        font.family: "Menlo"
-                        font.pixelSize: 16
+                        font.family: root.fontFamily
+                        font.pixelSize: root.fontPixelSize
                         selectByMouse: true
                         persistentSelection: true
                         background: null
@@ -254,6 +258,8 @@ Item {
                         wrapMode: TextEdit.Wrap
                         textFormat: TextEdit.RichText
                         text: root.renderedMarkdown
+                        font.family: root.fontFamily
+                        font.pixelSize: root.fontPixelSize
                         color: "#f1f1f1"
                         selectionColor: "#444444"
                         cursorVisible: false

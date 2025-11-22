@@ -19,6 +19,18 @@ ApplicationWindow {
     readonly property int viewerSplit: 2
     property int viewerMode: viewerTextOnly
     property string renderedMarkdown: ""
+    property var availableFonts: Qt.fontFamilies()
+    property string editorFontFamily: {
+        var fonts = window.availableFonts || []
+        var preferred = ["Menlo", "Consolas", "DejaVu Sans Mono", "Monospace"]
+        for (var i = 0; i < preferred.length; ++i) {
+            if (fonts.indexOf(preferred[i]) >= 0) {
+                return preferred[i]
+            }
+        }
+        return fonts.length > 0 ? fonts[0] : "Sans Serif"
+    }
+    property int editorFontPixelSize: 16
     Component.onCompleted: {
         documentUtilities.analyzeText(document.text)
         renderedMarkdown = markdownBridge.render(document.text)
@@ -64,10 +76,23 @@ ApplicationWindow {
         wordCount: window.wordCount
         paragraphCount: window.paragraphCount
         lineCount: window.lineCount
+        fontOptions: window.availableFonts
+        selectedFontFamily: window.editorFontFamily
+        selectedFontSize: window.editorFontPixelSize
         onNewRequested: document.clear()
         onOpenRequested: window.openFile()
         onSaveRequested: window.saveFile()
         onInsertTimestampRequested: timestampMenu.popup()
+        onFontFamilyChanged: function(family) {
+            if (family && family.length > 0) {
+                window.editorFontFamily = family
+            }
+        }
+        onFontSizeChanged: function(size) {
+            if (size > 4) {
+                window.editorFontPixelSize = size
+            }
+        }
     }
 
     ViewerStack {
@@ -76,6 +101,8 @@ ApplicationWindow {
         document: document
         viewerMode: window.viewerMode
         renderedMarkdown: window.renderedMarkdown
+        fontFamily: window.editorFontFamily
+        fontPixelSize: window.editorFontPixelSize
     }
 
     footer: ViewerFooter {
