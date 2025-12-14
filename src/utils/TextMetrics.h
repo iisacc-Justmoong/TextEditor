@@ -14,6 +14,4 @@ struct TextMetrics
     [[nodiscard]] static TextMetrics fromText(const QString& text) noexcept;
 
 private:
-    [[nodiscard]] static int computeWordCount(const QString& text) noexcept;
-    [[nodiscard]] static int computeParagraphCount(const QString& text) noexcept;
 };

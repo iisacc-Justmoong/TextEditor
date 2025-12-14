@@ -19,6 +19,8 @@ ApplicationWindow {
     readonly property int viewerSplit: 2
     property int viewerMode: viewerTextOnly
     property string renderedMarkdown: ""
+    property string _pendingMetricsText: ""
+    property string _pendingRenderText: ""
     property var availableFonts: Qt.fontFamilies()
     property string editorFontFamily: {
         var fonts = window.availableFonts || []
@@ -58,8 +60,10 @@ ApplicationWindow {
         onStatusMessage: console.info(description)
         onErrorOccurred: console.warn(description)
         onTextChanged: {
-            documentUtilities.analyzeText(text)
-            window.renderedMarkdown = markdownBridge.render(text)
+            window._pendingMetricsText = text
+            metricsTimer.restart()
+            window._pendingRenderText = text
+            renderTimer.restart()
         }
     }
 
@@ -69,6 +73,20 @@ ApplicationWindow {
 
     DocumentUtilities {
         id: documentUtilities
+    }
+
+    Timer {
+        id: metricsTimer
+        interval: 40
+        repeat: false
+        onTriggered: documentUtilities.analyzeText(window._pendingMetricsText)
+    }
+
+    Timer {
+        id: renderTimer
+        interval: 80
+        repeat: false
+        onTriggered: window.renderedMarkdown = markdownBridge.render(window._pendingRenderText)
     }
 
     header: AppToolbar {
