@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(TextEditor VERSION 0.1 LANGUAGES CXX)
+project(iisaccTexEdit VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,7 +13,9 @@ qt_standard_project_setup()
 qt_policy(SET QTP0001 NEW)
 qt_policy(SET QTP0004 NEW)
 
-qt_add_executable(TextEditor
+qt_add_executable(iisaccTexEdit
+        MACOSX_BUNDLE
+        MANUAL_FINALIZATION
     main.cpp
     src/editor/TextDocument.cpp
     src/editor/TextDocument.h
@@ -25,35 +27,44 @@ qt_add_executable(TextEditor
     src/render/MarkdownRenderBridge.h
     src/utils/DocumentUtilities.cpp
     src/utils/DocumentUtilities.h
+    src/utils/TextMetrics.cpp
+    src/utils/TextMetrics.h
+    src/utils/TimestampFormatter.cpp
+    src/utils/TimestampFormatter.h
 )
 
-target_include_directories(TextEditor
+target_include_directories(iisaccTexEdit
     PRIVATE
         src
 )
 
-target_link_libraries(TextEditor
+target_link_libraries(iisaccTexEdit
     PRIVATE
         Qt6::Quick
         Qt6::Qml
 )
 
-qt_add_qml_module(TextEditor
-    URI TextEditor
+qt_add_qml_module(iisaccTexEdit
+    URI iisaccTexEdit
     VERSION 1.0
     QML_FILES
         qml/Main.qml
         qml/AppToolbar.qml
         qml/ViewerStack.qml
         qml/ViewerFooter.qml
+        qml/DocumentTextArea.qml
 )
 
-set_target_properties(TextEditor PROPERTIES
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-)
-
-install(TARGETS TextEditor
+install(TARGETS iisaccTexEdit
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+set_target_properties(iisaccTexEdit PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/platform/macos/Info.plist"
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/platform/macos/iisaccTexEdit.entitlements"
+)
+
+
+qt_finalize_executable(iisaccTexEdit)

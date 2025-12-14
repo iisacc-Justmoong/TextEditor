@@ -13,11 +13,6 @@ Item {
     property int fontPixelSize: 16
     onRenderedMarkdownChanged: updateMarkdownCaret()
     onViewerModeChanged: updateMarkdownCaret()
-    function updateDocument(text) {
-        if (document.text !== text) {
-            document.text = text
-        }
-    }
 
     function insertAtCursor(value) {
         let target = null
@@ -40,14 +35,14 @@ Item {
 
     function updateMarkdownCaret() {
         if (!markdownPreview || !markdownEditor) {
-            return;
+            return
         }
-        var maxPos = markdownPreview.length ? markdownPreview.length : markdownEditor.length;
-        var pos = Math.max(0, Math.min(markdownEditor.cursorPosition, maxPos));
-        var rect = markdownPreview.positionToRectangle(pos);
-        markdownCaret.x = rect.x;
-        markdownCaret.y = rect.y;
-        markdownCaret.height = rect.height > 0 ? rect.height : markdownEditor.cursorRectangle.height;
+        const maxPos = markdownPreview.length ? markdownPreview.length : markdownEditor.length
+        const pos = Math.max(0, Math.min(markdownEditor.cursorPosition, maxPos))
+        const rect = markdownPreview.positionToRectangle(pos)
+        markdownCaret.x = rect.x
+        markdownCaret.y = rect.y
+        markdownCaret.height = rect.height > 0 ? rect.height : markdownEditor.cursorRectangle.height
         markdownCaret.visible = root.viewerMode === 1 && markdownEditor.cursorVisible;
     }
 
@@ -60,9 +55,9 @@ Item {
                 anchors.fill: parent
                 clip: true
 
-                TextArea {
+                DocumentTextArea {
                     id: textEditor
-                    property bool syncingFromDocument: false
+                    document: root.document
                     width: parent ? parent.width : undefined
                     height: parent ? parent.height : undefined
                     padding: 0
@@ -70,33 +65,11 @@ Item {
                     rightPadding: 0
                     topPadding: 0
                     bottomPadding: 0
-                    wrapMode: TextEdit.Wrap
                     color: "white"
                     placeholderText: qsTr("Start typing...")
                     font.family: root.fontFamily
                     font.pixelSize: root.fontPixelSize
-                    selectByMouse: true
-                    persistentSelection: true
                     background: null
-                    Component.onCompleted: {
-                        syncingFromDocument = true
-                        text = root.document.text
-                        syncingFromDocument = false
-                    }
-                    Connections {
-                        target: root.document
-                        function onTextChanged() {
-                            textEditor.syncingFromDocument = true
-                            textEditor.text = root.document.text
-                            textEditor.syncingFromDocument = false
-                        }
-                    }
-                    onTextChanged: {
-                        if (syncingFromDocument) {
-                            return
-                        }
-                        root.updateDocument(text)
-                    }
                 }
             }
         }
@@ -153,42 +126,19 @@ Item {
                         enabled: false
                     }
 
-                    TextArea {
+                    DocumentTextArea {
                         id: markdownEditor
-                        property bool syncingFromDocument: false
+                        document: root.document
                         anchors.fill: parent
                         color: Qt.rgba(0, 0, 0, 0)
                         selectionColor: Qt.rgba(79 / 255, 195 / 255, 247 / 255, 0.35)
-                        wrapMode: TextEdit.Wrap
                         cursorVisible: false
                         font.family: root.fontFamily
                         font.pixelSize: root.fontPixelSize
-                        selectByMouse: true
-                        persistentSelection: true
                         focus: root.viewerMode === 1
                         background: null
-                        Component.onCompleted: {
-                            syncingFromDocument = true
-                            text = root.document.text
-                            syncingFromDocument = false
-                            root.updateMarkdownCaret()
-                        }
-                        Connections {
-                            target: root.document
-                            function onTextChanged() {
-                                markdownEditor.syncingFromDocument = true
-                                markdownEditor.text = root.document.text
-                                markdownEditor.syncingFromDocument = false
-                                root.updateMarkdownCaret()
-                            }
-                        }
-                        onTextChanged: {
-                            if (syncingFromDocument) {
-                                return
-                            }
-                            root.updateDocument(text)
-                            root.updateMarkdownCaret()
-                        }
+                        Component.onCompleted: root.updateMarkdownCaret()
+                        onTextChanged: root.updateMarkdownCaret()
                         onCursorPositionChanged: root.updateMarkdownCaret()
                         onCursorVisibleChanged: root.updateMarkdownCaret()
                     }
@@ -206,9 +156,9 @@ Item {
                     Layout.fillHeight: true
                     clip: true
 
-                    TextArea {
+                    DocumentTextArea {
                         id: splitEditor
-                        property bool syncingFromDocument: false
+                        document: root.document
                         width: parent ? parent.width : undefined
                         height: parent ? parent.height : undefined
                         padding: 0
@@ -216,33 +166,11 @@ Item {
                         rightPadding: 0
                         topPadding: 0
                         bottomPadding: 0
-                        wrapMode: TextEdit.Wrap
                         color: "white"
                         placeholderText: qsTr("Start typing...")
                         font.family: root.fontFamily
                         font.pixelSize: root.fontPixelSize
-                        selectByMouse: true
-                        persistentSelection: true
                         background: null
-                        Component.onCompleted: {
-                            syncingFromDocument = true
-                            text = root.document.text
-                            syncingFromDocument = false
-                        }
-                        Connections {
-                            target: root.document
-                            function onTextChanged() {
-                                splitEditor.syncingFromDocument = true
-                                splitEditor.text = root.document.text
-                                splitEditor.syncingFromDocument = false
-                            }
-                        }
-                        onTextChanged: {
-                            if (syncingFromDocument) {
-                                return
-                            }
-                            root.updateDocument(text)
-                        }
                     }
                 }
 

@@ -3,6 +3,9 @@
 #include <QObject>
 #include <QString>
 
+#include "utils/TextMetrics.h"
+#include "utils/TimestampFormatter.h"
+
 class DocumentUtilities : public QObject
 {
     Q_OBJECT
@@ -24,11 +27,6 @@ signals:
     void metricsChanged();
 
 private:
-    static int computeWordCount(const QString& text) noexcept;
-    static int computeParagraphCount(const QString& text) noexcept;
-    static QString formatGmtOffset(int minutesFromUtc);
-
-    int m_wordCount = 0;
-    int m_paragraphCount = 0;
-    int m_lineCount = 0;
+    TextMetrics m_metrics;
+    TimestampFormatter m_timestampFormatter;
 };
